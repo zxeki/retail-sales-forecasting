@@ -7,6 +7,10 @@ seaborn>=0.13,<1.0
 # Dataset download
 kagglehub>=0.3,<1.0
 
+# Modeling
+lightgbm>=4.5,<5.0
+scikit-learn>=1.5,<2.0
+
 # Notebook environment
 jupyterlab>=4.2,<5.0
 notebook>=7.2,<8.0

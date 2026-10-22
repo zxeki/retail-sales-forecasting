@@ -2,7 +2,7 @@
 
 End-to-end retail sales forecasting using time-series analysis, machine learning, and an interactive Streamlit dashboard to analyze sales trends, predict future demand, and support data-driven business decisions.
 
-This repository currently contains the **project foundation**: environment setup, a data loader, basic validation, tests, and a first exploration notebook. No machine learning model is trained yet.
+This repository currently contains the **project foundation**: environment setup, a data loader, basic validation, leakage-safe feature engineering, an evaluation suite, and baseline plus machine-learning models (LightGBM and Ridge).
 
 ## Project structure
 
@@ -14,7 +14,8 @@ retail-sales-forecasting/
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_exploratory_data_analysis.ipynb
-│   └── 03_features_and_baseline.ipynb
+│   ├── 03_features_and_baseline.ipynb
+│   └── 04_ml_and_evaluation.ipynb
 ├── reports/
 │   └── figures/              # Generated plots (not committed)
 ├── scripts/
@@ -28,6 +29,7 @@ retail-sales-forecasting/
 │       ├── datasets.py
 │       ├── evaluation.py
 │       ├── features.py
+│       ├── models.py
 │       ├── splits.py
 │       └── validation.py
 ├── tests/
@@ -36,6 +38,7 @@ retail-sales-forecasting/
 │   ├── test_data_loader.py
 │   ├── test_evaluation.py
 │   ├── test_features.py
+│   ├── test_models.py
 │   ├── test_splits.py
 │   └── test_validation.py
 ├── .gitignore
@@ -157,6 +160,7 @@ Open a notebook and run the cells from top to bottom:
 - `notebooks/01_data_exploration.ipynb` — data loading, structure, and validation.
 - `notebooks/02_exploratory_data_analysis.ipynb` — trends, seasonality, stores, families, promotions, holidays, transactions, oil, and data-quality findings.
 - `notebooks/03_features_and_baseline.ipynb` — chronological split, leakage-safe features, seasonal-naive baseline, and evaluation metrics.
+- `notebooks/04_ml_and_evaluation.ipynb` — trains LightGBM and Ridge on the leakage-safe features, compares them against the baseline, and reports error breakdowns.
 
 Notebook 01 reports:
 
@@ -204,13 +208,16 @@ $env:PYTHONPATH = "$PWD\src"
 - `build_feature_frame(data)` adds calendar, promotion, lag (7/14/28), and rolling-mean (7/28) features. Lags and rolling means are shifted so no row uses its own or future sales.
 - `seasonal_naive_forecast(train, target_dates)` produces a leakage-safe weekly baseline.
 - `evaluate_forecast(y_true, y_pred)` returns MAE, RMSE, and RMSLE (the Kaggle metric).
-- Baseline reference (16-day validation window): seasonal naive (last week) RMSLE ≈ 0.617, vs zero baseline RMSLE ≈ 4.42. Week 4 models must beat this.
+- `train_lightgbm(...)` and `train_ridge(...)` train candidates on `log1p(sales)`; `predict(...)` returns sales on the original scale.
+- `compare_models(train, validation, candidates)` ranks models by RMSLE; `error_breakdown(...)` aggregates error by family or store.
+- Baseline reference (16-day validation window): seasonal naive (last week) RMSLE ≈ 0.617, zero baseline RMSLE ≈ 4.42.
+- Model results (same 16-day validation window): LightGBM RMSLE ≈ 0.396 / MAE ≈ 67.7, Ridge RMSLE ≈ 0.427 / MAE ≈ 78.0 — both beat the baseline (~36% and ~31% RMSLE improvement).
 
 ## Notes
 
 - Raw data, processed data, generated figures, virtual environments, and secrets are excluded from version control.
 - No data is fabricated. The project fails gracefully when the Kaggle files are absent.
-- No model is trained in this foundation phase.
+- Models train on `log1p(sales)` and are scored with the same metrics as the baseline on an identical chronological split.
 
 ## License
 
