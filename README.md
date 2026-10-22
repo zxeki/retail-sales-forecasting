@@ -17,12 +17,14 @@ retail-sales-forecasting/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_exploratory_data_analysis.ipynb
 │   ├── 03_features_and_baseline.ipynb
-│   └── 04_ml_and_evaluation.ipynb
+│   ├── 04_ml_and_evaluation.ipynb
+│   └── 05_release_and_submission.ipynb
 ├── reports/
 │   └── figures/              # Generated plots (not committed)
 ├── scripts/
 │   ├── build_forecast_artifacts.py  # Prebuild dashboard artifacts
-│   └── download_data.py             # kagglehub download helper
+│   ├── download_data.py             # kagglehub download helper
+│   └── generate_submission.py       # Kaggle submission generator
 ├── src/
 │   └── retail_sales_forecasting/
 │       ├── __init__.py
@@ -36,6 +38,7 @@ retail-sales-forecasting/
 │       ├── forecast.py
 │       ├── models.py
 │       ├── splits.py
+│       ├── submission.py
 │       └── validation.py
 ├── tests/
 │   ├── conftest.py
@@ -47,6 +50,7 @@ retail-sales-forecasting/
 │   ├── test_forecast.py
 │   ├── test_models.py
 │   ├── test_splits.py
+│   ├── test_submission.py
 │   └── test_validation.py
 ├── .gitignore
 ├── LICENSE
@@ -168,6 +172,7 @@ Open a notebook and run the cells from top to bottom:
 - `notebooks/02_exploratory_data_analysis.ipynb` — trends, seasonality, stores, families, promotions, holidays, transactions, oil, and data-quality findings.
 - `notebooks/03_features_and_baseline.ipynb` — chronological split, leakage-safe features, seasonal-naive baseline, and evaluation metrics.
 - `notebooks/04_ml_and_evaluation.ipynb` — trains LightGBM and Ridge on the leakage-safe features, compares them against the baseline, and reports error breakdowns.
+- `notebooks/05_release_and_submission.ipynb` — validates the Kaggle submission format, reviews the final comparison, and summarises methodology, limitations, and reproducibility.
 
 Notebook 01 reports:
 
@@ -204,6 +209,16 @@ Streamlit opens `http://localhost:8501`. The dashboard provides:
 - **Forecast** tab — daily actual vs LightGBM forecast vs seasonal naive, clearly distinguished
 - **Error analysis** tab — mean absolute error by family and store
 - **Model comparison** tab — the full metrics table on the identical validation window
+
+### Generate a Kaggle submission
+
+```powershell
+python scripts/generate_submission.py
+```
+
+This trains the selected LightGBM model on the full training history, forecasts the official test window (2017-08-16 to 2017-08-31), validates the format, and writes `data/processed/submission.csv` with the required `id`, `sales` columns in the original test-row order.
+
+Because the test horizon is longer than the shortest lag (7 days), later test days have no observed sales to lag on. The script forecasts **recursively**: it predicts one day at a time and feeds each day's predictions back as lag/rolling inputs for the next day, so no future information is ever used.
 
 ### Load data from Python
 
@@ -246,12 +261,48 @@ $env:PYTHONPATH = "$PWD\src"
 - Baseline reference (16-day validation window): seasonal naive (last week) RMSLE ≈ 0.617, zero baseline RMSLE ≈ 4.42.
 - Model results (same 16-day validation window): LightGBM RMSLE ≈ 0.396 / MAE ≈ 67.7, Ridge RMSLE ≈ 0.427 / MAE ≈ 78.0 — both beat the baseline (~36% and ~31% RMSLE improvement).
 
-## Notes
+## Methodology
 
-- Raw data, processed data, generated figures, virtual environments, and secrets are excluded from version control.
-- No data is fabricated. The project fails gracefully when the Kaggle files are absent.
-- Models train on `log1p(sales)` and are scored with the same metrics as the baseline on an identical chronological split.
-- The dashboard reads cached forecast artifacts and never displays future information as if it were known.
+1. **Data understanding.** Load and validate the six competition files; inspect ranges, missing values, duplicates, and the zero-sales share.
+2. **Exploratory analysis.** Study trends, weekday/monthly seasonality, store and family differences, promotions, holidays, transactions, and oil prices.
+3. **Chronological validation.** Hold out the last 16 days (2017-07-31 to 2017-08-15) to mirror the Kaggle test horizon. Never shuffle time-series data.
+4. **Leakage-safe features.** Calendar, promotion, lags (7/14/28), and rolling means (7/28), all shifted so a row never sees its own or future sales.
+5. **Baseline.** A seasonal-naive (last week) forecast is the reference every model must beat.
+6. **Candidate models.** LightGBM (gradient-boosted trees) and Ridge (scaled linear), trained on `log1p(sales)` so errors align with the RMSLE metric.
+7. **Evaluation.** MAE, RMSE, and RMSLE on the identical split, plus error breakdowns by family and store.
+8. **Submission.** Train on the full history and recursively forecast the official test window.
+
+## Results
+
+Validation window: 2017-07-31 to 2017-08-15 (28,512 rows, 54 stores, 33 families).
+
+| Model | MAE | RMSE | RMSLE |
+| --- | ---: | ---: | ---: |
+| **LightGBM (selected)** | **67.66** | **228.69** | **0.3955** |
+| Ridge | 78.03 | 253.69 | 0.4267 |
+| Seasonal naive (last week) | 96.54 | 348.38 | 0.6170 |
+| Zero baseline | 467.14 | 1332.91 | 4.4195 |
+
+LightGBM improves on the seasonal-naive baseline by roughly **36% RMSLE**. Errors concentrate in high-volume families (BEVERAGES, GROCERY I); low-volume families (BOOKS) are near zero.
+
+## Limitations
+
+- Validation covers a single 16-day late-summer window; seasonality beyond that is untested.
+- No hyperparameter tuning or time-based cross-validation was performed.
+- Oil prices were excluded following the Week 2 finding of a confounded relationship.
+- Recursive multi-step forecasts accumulate error, so later test days are less certain than earlier ones.
+- The model does not use store metadata (city, state, type, cluster) or longer-range seasonality.
+
+## Reproducibility
+
+- Install with `pip install -r requirements.txt`; download the data with `python scripts/download_data.py`.
+- LightGBM uses a fixed random seed; validation, dashboard, and submission all reuse the same split and metric functions.
+- Run `pytest -q` for the automated suite covering loading, features, evaluation, models, the forecast pipeline, dashboard helpers, and submission format.
+- Raw data, processed artifacts, figures, environments, and secrets are excluded from version control.
+
+## Dataset attribution
+
+Data comes from the Kaggle competition [Store Sales - Time Series Forecasting](https://www.kaggle.com/competitions/store-sales-time-series-forecasting/data), provided by Corporación Favorita. The dataset is used here for educational purposes and is not redistributed; download it directly from Kaggle under the competition rules.
 
 ## License
 
