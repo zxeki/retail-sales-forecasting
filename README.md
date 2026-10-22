@@ -4,6 +4,36 @@ End-to-end retail sales forecasting using time-series analysis, machine learning
 
 This repository contains the full pipeline: environment setup, a data loader, basic validation, leakage-safe feature engineering, an evaluation suite, baseline plus machine-learning models (LightGBM and Ridge), and an interactive Streamlit dashboard.
 
+## Quick start
+
+From the project root, after [Setup](#setup) and [downloading the dataset](#download-the-dataset):
+
+```powershell
+# 1. Activate the environment
+.\.venv\Scripts\Activate.ps1
+
+# 2. Prebuild the cached artifacts (trains LightGBM once)
+python scripts/build_forecast_artifacts.py
+
+# 3. Launch the interactive dashboard
+streamlit run app/streamlit_app.py
+```
+
+Then open **http://localhost:8501** in your browser. If you prefer to run without activating the environment, call the executables directly:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_forecast_artifacts.py
+.\.venv\Scripts\streamlit.exe run app\streamlit_app.py
+```
+
+To generate a Kaggle submission, run:
+
+```powershell
+python scripts/generate_submission.py
+```
+
+See [Run the dashboard](#run-the-dashboard) and [Generate a Kaggle submission](#generate-a-kaggle-submission) for details.
+
 ## Project structure
 
 ```text
@@ -195,13 +225,30 @@ To prebuild the artifacts explicitly (recommended once after downloading the dat
 python scripts/build_forecast_artifacts.py
 ```
 
-Then launch the app:
+Then launch the app (make sure the virtual environment is activated, or use `.\.venv\Scripts\streamlit.exe`):
 
 ```powershell
 streamlit run app/streamlit_app.py
 ```
 
-Streamlit opens `http://localhost:8501`. The dashboard provides:
+Streamlit prints a local URL and normally opens your browser automatically. Open **http://localhost:8501** if it does not.
+
+Common options:
+
+```powershell
+# Use a different port
+streamlit run app/streamlit_app.py --server.port 8502
+
+# Run without opening a browser (headless) and bind to all interfaces
+streamlit run app/streamlit_app.py --server.headless true --server.address 0.0.0.0
+
+# Skip the browser prompt and usage stats
+streamlit run app/streamlit_app.py --browser.gatherUsageStats false
+```
+
+Stop the app with `Ctrl+C` in the terminal where it runs.
+
+The dashboard provides:
 
 - sidebar filters for product family, store number, and validation date range
 - KPIs for the selected slice (RMSLE, baseline comparison, MAE, rows)
@@ -209,6 +256,14 @@ Streamlit opens `http://localhost:8501`. The dashboard provides:
 - **Forecast** tab — daily actual vs LightGBM forecast vs seasonal naive, clearly distinguished
 - **Error analysis** tab — mean absolute error by family and store
 - **Model comparison** tab — the full metrics table on the identical validation window
+
+Troubleshooting:
+
+- **`streamlit: command was not found`** — the environment is not activated. Run `.\.venv\Scripts\Activate.ps1` or use `.\.venv\Scripts\streamlit.exe run app\streamlit_app.py`.
+- **"The Kaggle dataset was not found"** — download the data into `data/raw/` first (see [Download the dataset](#download-the-dataset)), then reload the page.
+- **First load is slow** — the app trains LightGBM if no cached artifacts exist. Run `python scripts/build_forecast_artifacts.py` once to avoid the wait.
+- **Port already in use** — start with `--server.port 8502`.
+- **Page is blank** — hard-refresh the browser (Ctrl+F5) or open a private window.
 
 ### Generate a Kaggle submission
 
