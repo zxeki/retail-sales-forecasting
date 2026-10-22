@@ -218,3 +218,41 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# Project datasets and generated artifacts
+# ---------------------------------------------------------------------------
+
+# Kaggle competition data (keep the directory, ignore its contents)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/**/*.zip
+data/**/*.csv
+store-sales-time-series-forecasting/
+kagglehub/
+
+# Generated reports and figures
+reports/figures/*
+!reports/figures/.gitkeep
+reports/*.html
+reports/*.pdf
+
+# Local model artifacts
+models/
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# Secrets and credentials
+kaggle.json
+.kaggle/
+secrets/
+.env.*
+!.env.example
+*.pem
+*.key
