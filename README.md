@@ -12,7 +12,8 @@ retail-sales-forecasting/
 │   ├── raw/                  # Kaggle CSV files (not committed)
 │   └── processed/            # Cleaned datasets (not committed)
 ├── notebooks/
-│   └── 01_data_exploration.ipynb
+│   ├── 01_data_exploration.ipynb
+│   └── 02_exploratory_data_analysis.ipynb
 ├── reports/
 │   └── figures/              # Generated plots (not committed)
 ├── scripts/
@@ -20,12 +21,14 @@ retail-sales-forecasting/
 ├── src/
 │   └── retail_sales_forecasting/
 │       ├── __init__.py
+│       ├── analysis.py
 │       ├── config.py
 │       ├── data_loader.py
 │       ├── datasets.py
 │       └── validation.py
 ├── tests/
 │   ├── conftest.py
+│   ├── test_analysis.py
 │   ├── test_data_loader.py
 │   └── test_validation.py
 ├── .gitignore
@@ -142,7 +145,12 @@ The tests use small temporary CSV files, so they work without the Kaggle dataset
 jupyter lab
 ```
 
-Open `notebooks/01_data_exploration.ipynb` and run the cells from top to bottom. The notebook reports:
+Open a notebook and run the cells from top to bottom:
+
+- `notebooks/01_data_exploration.ipynb` — data loading, structure, and validation.
+- `notebooks/02_exploratory_data_analysis.ipynb` — trends, seasonality, stores, families, promotions, holidays, transactions, oil, and data-quality findings.
+
+Notebook 01 reports:
 
 - dataset inventory, dimensions, and column types
 - training date range
