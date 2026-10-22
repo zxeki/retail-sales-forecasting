@@ -38,11 +38,22 @@ from .features import (
     add_rolling_features,
     build_feature_frame,
 )
+from .models import (
+    DEFAULT_FEATURES,
+    LINEAR_FEATURES,
+    compare_models,
+    error_breakdown,
+    predict,
+    train_lightgbm,
+    train_ridge,
+)
 from .splits import ChronologicalSplit, chronological_split
 from .validation import ValidationResult, format_validation_report, validate_dataset
 
 __all__ = [
     "ChronologicalSplit",
+    "DEFAULT_FEATURES",
+    "LINEAR_FEATURES",
     "DatasetNotFoundError",
     "ValidationResult",
     "add_calendar_features",
@@ -52,8 +63,10 @@ __all__ = [
     "available_datasets",
     "build_feature_frame",
     "chronological_split",
+    "compare_models",
     "daily_sales",
     "dataset_path",
+    "error_breakdown",
     "evaluate_forecast",
     "format_validation_report",
     "holidays_by_type",
@@ -66,6 +79,7 @@ __all__ = [
     "missing_value_report",
     "monthly_sales_trend",
     "oil_price_trend",
+    "predict",
     "promotion_summary",
     "root_mean_squared_error",
     "root_mean_squared_log_error",
@@ -74,6 +88,8 @@ __all__ = [
     "sales_by_store",
     "sales_by_weekday",
     "seasonal_naive_forecast",
+    "train_lightgbm",
+    "train_ridge",
     "transactions_summary",
     "validate_dataset",
     "yearly_sales_trend",
