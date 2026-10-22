@@ -11,6 +11,10 @@ kagglehub>=0.3,<1.0
 lightgbm>=4.5,<5.0
 scikit-learn>=1.5,<2.0
 
+# Dashboard
+streamlit>=1.40,<2.0
+plotly>=5.24,<6.0
+
 # Notebook environment
 jupyterlab>=4.2,<5.0
 notebook>=7.2,<8.0
