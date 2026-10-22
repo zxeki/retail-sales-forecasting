@@ -2,15 +2,17 @@
 
 End-to-end retail sales forecasting using time-series analysis, machine learning, and an interactive Streamlit dashboard to analyze sales trends, predict future demand, and support data-driven business decisions.
 
-This repository currently contains the **project foundation**: environment setup, a data loader, basic validation, leakage-safe feature engineering, an evaluation suite, and baseline plus machine-learning models (LightGBM and Ridge).
+This repository contains the full pipeline: environment setup, a data loader, basic validation, leakage-safe feature engineering, an evaluation suite, baseline plus machine-learning models (LightGBM and Ridge), and an interactive Streamlit dashboard.
 
 ## Project structure
 
 ```text
 retail-sales-forecasting/
+├── app/
+│   └── streamlit_app.py      # Interactive Streamlit dashboard
 ├── data/
 │   ├── raw/                  # Kaggle CSV files (not committed)
-│   └── processed/            # Cleaned datasets (not committed)
+│   └── processed/            # Forecast artifacts (not committed)
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_exploratory_data_analysis.ipynb
@@ -19,25 +21,30 @@ retail-sales-forecasting/
 ├── reports/
 │   └── figures/              # Generated plots (not committed)
 ├── scripts/
-│   └── download_data.py      # kagglehub download helper
+│   ├── build_forecast_artifacts.py  # Prebuild dashboard artifacts
+│   └── download_data.py             # kagglehub download helper
 ├── src/
 │   └── retail_sales_forecasting/
 │       ├── __init__.py
 │       ├── analysis.py
 │       ├── config.py
+│       ├── dashboard_data.py
 │       ├── data_loader.py
 │       ├── datasets.py
 │       ├── evaluation.py
 │       ├── features.py
+│       ├── forecast.py
 │       ├── models.py
 │       ├── splits.py
 │       └── validation.py
 ├── tests/
 │   ├── conftest.py
 │   ├── test_analysis.py
+│   ├── test_dashboard_data.py
 │   ├── test_data_loader.py
 │   ├── test_evaluation.py
 │   ├── test_features.py
+│   ├── test_forecast.py
 │   ├── test_models.py
 │   ├── test_splits.py
 │   └── test_validation.py
@@ -173,6 +180,31 @@ Notebook 01 reports:
 
 If `train.csv` is missing, the notebook prints download instructions and skips data-dependent cells instead of failing with an unclear error.
 
+### Run the dashboard
+
+The Streamlit dashboard explores historical sales trends and the LightGBM forecast against the seasonal-naive baseline. It loads cached artifacts from `data/processed/`; if they are missing it builds them on first load.
+
+To prebuild the artifacts explicitly (recommended once after downloading the data):
+
+```powershell
+python scripts/build_forecast_artifacts.py
+```
+
+Then launch the app:
+
+```powershell
+streamlit run app/streamlit_app.py
+```
+
+Streamlit opens `http://localhost:8501`. The dashboard provides:
+
+- sidebar filters for product family, store number, and validation date range
+- KPIs for the selected slice (RMSLE, baseline comparison, MAE, rows)
+- **Sales trends** tab — monthly totals and the top families by sales
+- **Forecast** tab — daily actual vs LightGBM forecast vs seasonal naive, clearly distinguished
+- **Error analysis** tab — mean absolute error by family and store
+- **Model comparison** tab — the full metrics table on the identical validation window
+
 ### Load data from Python
 
 ```python
@@ -210,6 +242,7 @@ $env:PYTHONPATH = "$PWD\src"
 - `evaluate_forecast(y_true, y_pred)` returns MAE, RMSE, and RMSLE (the Kaggle metric).
 - `train_lightgbm(...)` and `train_ridge(...)` train candidates on `log1p(sales)`; `predict(...)` returns sales on the original scale.
 - `compare_models(train, validation, candidates)` ranks models by RMSLE; `error_breakdown(...)` aggregates error by family or store.
+- `run_forecast(train, holidays)` trains the selected model, scores it against the baseline, and returns predictions plus a metrics table; `save_forecast_run`/`load_forecast_run` cache the result for the dashboard.
 - Baseline reference (16-day validation window): seasonal naive (last week) RMSLE ≈ 0.617, zero baseline RMSLE ≈ 4.42.
 - Model results (same 16-day validation window): LightGBM RMSLE ≈ 0.396 / MAE ≈ 67.7, Ridge RMSLE ≈ 0.427 / MAE ≈ 78.0 — both beat the baseline (~36% and ~31% RMSLE improvement).
 
@@ -218,6 +251,7 @@ $env:PYTHONPATH = "$PWD\src"
 - Raw data, processed data, generated figures, virtual environments, and secrets are excluded from version control.
 - No data is fabricated. The project fails gracefully when the Kaggle files are absent.
 - Models train on `log1p(sales)` and are scored with the same metrics as the baseline on an identical chronological split.
+- The dashboard reads cached forecast artifacts and never displays future information as if it were known.
 
 ## License
 
