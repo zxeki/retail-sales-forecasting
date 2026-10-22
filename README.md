@@ -13,7 +13,8 @@ retail-sales-forecasting/
 │   └── processed/            # Cleaned datasets (not committed)
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
-│   └── 02_exploratory_data_analysis.ipynb
+│   ├── 02_exploratory_data_analysis.ipynb
+│   └── 03_features_and_baseline.ipynb
 ├── reports/
 │   └── figures/              # Generated plots (not committed)
 ├── scripts/
@@ -25,11 +26,17 @@ retail-sales-forecasting/
 │       ├── config.py
 │       ├── data_loader.py
 │       ├── datasets.py
+│       ├── evaluation.py
+│       ├── features.py
+│       ├── splits.py
 │       └── validation.py
 ├── tests/
 │   ├── conftest.py
 │   ├── test_analysis.py
 │   ├── test_data_loader.py
+│   ├── test_evaluation.py
+│   ├── test_features.py
+│   ├── test_splits.py
 │   └── test_validation.py
 ├── .gitignore
 ├── LICENSE
@@ -149,6 +156,7 @@ Open a notebook and run the cells from top to bottom:
 
 - `notebooks/01_data_exploration.ipynb` — data loading, structure, and validation.
 - `notebooks/02_exploratory_data_analysis.ipynb` — trends, seasonality, stores, families, promotions, holidays, transactions, oil, and data-quality findings.
+- `notebooks/03_features_and_baseline.ipynb` — chronological split, leakage-safe features, seasonal-naive baseline, and evaluation metrics.
 
 Notebook 01 reports:
 
@@ -189,6 +197,14 @@ $env:PYTHONPATH = "$PWD\src"
 - Missing files raise `DatasetNotFoundError` with the Kaggle URL and download instructions.
 - Validation checks required columns, date parsing, missing values, and dataset dimensions.
 - Missing values are reported but do not fail validation; missing required columns or unparseable dates do.
+
+## Forecasting components
+
+- `chronological_split(data, validation_days=16)` splits by date so validation always follows training; never shuffle time-series data.
+- `build_feature_frame(data)` adds calendar, promotion, lag (7/14/28), and rolling-mean (7/28) features. Lags and rolling means are shifted so no row uses its own or future sales.
+- `seasonal_naive_forecast(train, target_dates)` produces a leakage-safe weekly baseline.
+- `evaluate_forecast(y_true, y_pred)` returns MAE, RMSE, and RMSLE (the Kaggle metric).
+- Baseline reference (16-day validation window): seasonal naive (last week) RMSLE ≈ 0.617, vs zero baseline RMSLE ≈ 4.42. Week 4 models must beat this.
 
 ## Notes
 
